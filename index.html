@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbre généalogique — Famille Boutgoumas</title>
+<style>
+  :root{
+    --paper:#f4ecdd;
+    --paper-dark:#e8dcc4;
+    --ink:#2c2418;
+    --ink-soft:#5c5140;
+    --line:#8a7a5c;
+    --accent:#a8432f;
+    --card-shadow: 0 2px 6px rgba(44,36,24,0.25);
+
+    --c0:#d9a877; --c0-ink:#3a2a15;
+    --c1:#3f6690; --c1-ink:#eef3f8;
+    --c2:#748f3c; --c2-ink:#f4f7ec;
+    --c3:#cdb92e; --c3-ink:#2c2610;
+    --c4:#c68a2e; --c4-ink:#2c1e08;
+    --c5:#28324d; --c5-ink:#e9ecf4;
+    --c6:#8f3b3b; --c6-ink:#f6e9e9;
+    --c7:#5c5140; --c7-ink:#f4f1ea;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.4), transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    overflow:hidden;
+  }
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    display:flex; align-items:baseline; gap:14px;
+    padding:14px 20px 10px;
+    background:linear-gradient(to bottom, var(--paper) 75%, transparent);
+    pointer-events:none;
+  }
+  header *{pointer-events:auto;}
+  h1{
+    font-size:1.35rem; margin:0; letter-spacing:0.5px;
+    font-weight:700; color:var(--ink);
+  }
+  header .sub{
+    font-size:0.8rem; color:var(--ink-soft); font-style:italic;
+  }
+
+  #toolbar{
+    position:fixed; top:14px; right:18px; z-index:30;
+    display:flex; gap:8px; align-items:center;
+  }
+  #toolbar input[type="text"]{
+    font-family:inherit; font-size:0.85rem;
+    padding:7px 10px; border-radius:6px;
+    border:1px solid var(--line); background:#fffdf8;
+    width:150px; color:var(--ink);
+  }
+  .btn{
+    font-family:inherit; font-size:0.85rem; cursor:pointer;
+    padding:7px 11px; border-radius:6px;
+    border:1px solid var(--line); background:#fffdf8; color:var(--ink);
+    transition:background .15s;
+  }
+  .btn:hover{background:var(--paper-dark);}
+  .btn:active{transform:translateY(1px);}
+
+  #canvas-wrap{
+    position:absolute; inset:0;
+    cursor:grab;
+  }
+  #canvas-wrap.dragging{cursor:grabbing;}
+
+  svg#tree{ display:block; }
+
+  .node-card{
+    filter:drop-shadow(0 2px 3px rgba(44,36,24,0.3));
+    cursor:pointer;
+  }
+  .node-card rect{
+    stroke:rgba(0,0,0,0.25); stroke-width:1;
+  }
+  .node-card.dim{ opacity:0.22; }
+  .node-card.match rect{ stroke:var(--accent); stroke-width:3; }
+
+  .node-name{
+    font-weight:700; font-size:12.5px; pointer-events:none;
+  }
+  .node-dates{
+    font-size:10.5px; opacity:0.85; pointer-events:none;
+  }
+  .node-flag{
+    font-size:10px; pointer-events:none;
+  }
+
+  .link{
+    fill:none; stroke:var(--line); stroke-width:1.4; opacity:0.75;
+  }
+  .link.dim{ opacity:0.12; }
+
+  #legend{
+    position:fixed; left:16px; bottom:16px; z-index:20;
+    background:rgba(255,253,248,0.92); border:1px solid var(--line);
+    border-radius:8px; padding:10px 12px; font-size:0.72rem;
+    max-width:150px; box-shadow: var(--card-shadow);
+  }
+  #legend .row{display:flex; align-items:center; gap:6px; margin:3px 0;}
+  #legend .swatch{width:12px; height:12px; border-radius:3px; flex:none;}
+  #legend h4{margin:0 0 6px; font-size:0.72rem; letter-spacing:0.3px; color:var(--ink-soft);}
+
+  #panel{
+    position:fixed; top:0; right:0; bottom:0; z-index:40;
+    width:300px; max-width:86vw;
+    background:#fffdf8; border-left:1px solid var(--line);
+    box-shadow:-4px 0 16px rgba(0,0,0,0.15);
+    transform:translateX(100%); transition:transform .25s ease;
+    padding:22px 20px; overflow-y:auto;
+  }
+  #panel.open{ transform:translateX(0); }
+  #panel .close{
+    position:absolute; top:12px; right:14px; cursor:pointer;
+    font-size:1.1rem; color:var(--ink-soft); background:none; border:none;
+  }
+  #panel h2{ margin:0 0 4px; font-size:1.2rem; }
+  #panel .pdates{ color:var(--ink-soft); font-style:italic; margin-bottom:14px; }
+  #panel dl{ margin:0; }
+  #panel dt{ font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin-top:12px; }
+  #panel dd{ margin:3px 0 0; line-height:1.4; }
+  #panel dd.incertain{ color:var(--accent); font-style:italic; }
+  #panel .childcount{ margin-top:16px; font-size:0.8rem; color:var(--ink-soft); }
+
+  #hint{
+    position:fixed; bottom:16px; right:18px; z-index:20;
+    font-size:0.72rem; color:var(--ink-soft); font-style:italic;
+    background:rgba(255,253,248,0.85); padding:6px 10px; border-radius:6px;
+  }
+
+  @media (max-width:640px){
+    header{padding:10px 12px 8px;}
+    h1{font-size:1.05rem;}
+    header .sub{display:none;}
+    #toolbar{top:auto; bottom:16px; left:16px; right:auto; flex-wrap:wrap; max-width:70vw;}
+    #toolbar input[type="text"]{width:110px;}
+    #legend{display:none;}
+    #hint{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Famille Boutgoumas <span style="color:var(--ink-soft); font-weight:400;">/ Boutoughmas</span></h1>
+  <span class="sub">Panneau N°95 — État civil 1890</span>
+</header>
+
+<div id="toolbar">
+  <input type="text" id="search" placeholder="Rechercher un nom…">
+  <button class="btn" id="zoomIn" title="Zoom avant">+</button>
+  <button class="btn" id="zoomOut" title="Zoom arrière">−</button>
+  <button class="btn" id="reset" title="Réinitialiser la vue">⤾ Vue</button>
+</div>
+
+<div id="canvas-wrap">
+  <svg id="tree" xmlns="http://www.w3.org/2000/svg">
+    <g id="viewport">
+      <g id="links"></g>
+      <g id="nodes"></g>
+    </g>
+  </svg>
+</div>
+
+<div id="legend">
+  <h4>Générations</h4>
+  <div id="legend-rows"></div>
+</div>
+
+<div id="hint">Molette = zoom · glisser = déplacer · clic sur une carte = détails</div>
+
+<div id="panel">
+  <button class="close" id="panelClose">✕</button>
+  <h2 id="pName"></h2>
+  <div class="pdates" id="pDates"></div>
+  <dl id="pFields"></dl>
+  <div class="childcount" id="pChildren"></div>
+</div>
+
+<script>
+/* ---------- Données (issues du JSON produit précédemment) ---------- */
+const DATA = {
+  "famille": "Boutgoumas / Boutoughmas",
+  "source": "Panneau généalogique N°95 - État civil 1890 (3 photos)",
+  "avertissement": "Reconstitution établie à partir de photos partiellement floues, coupées par le cadrage, ou avec reflets/ombres portées. Certains textes en arabe et certaines dates sont difficiles à lire avec certitude : ces cas sont signalés par un champ 'incertain'. Certains rattachements de branches ont été déduits de la position des flèches sur le panneau, parfois coupées sur les photos.",
+  "racine": {
+    "nom": "Boutgoumas",
+    "enfants": [
+      { "nom": "M'hmedh Nath waghzane", "enfants": [] },
+      {
+        "nom": "Slimane",
+        "epouses": ["Halima moumou", "Boukamoum aouda"],
+        "enfants": [
+          {
+            "nom": "Hammouche",
+            "mere": "Boukamoum aouda",
+            "enfants": [
+              { "nom": "Aouda", "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Messaoud')" },
+              { "nom": "Zineb", "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Kaci/Gasi')" }
+            ]
+          },
+          {
+            "nom": "Habichi",
+            "mere": "Boukamoum aouda",
+            "enfants": [
+              { "nom": "Mames", "epoux": "Moumou" },
+              {
+                "nom": "Slimane",
+                "naissance_deces": "1874/1911",
+                "epoux": "Adidi",
+                "enfants": [
+                  {
+                    "nom": "Mohamed naji",
+                    "naissance_deces": "1910/1989",
+                    "epoux": "Elouare Sitmi",
+                    "incertain": "nom de l'épouse",
+                    "enfants": [
+                      { "nom": "Mahdjouba", "naissance": "1939", "mere": "Belout", "epoux": "Boutoughmas Hamouche" },
+                      { "nom": "Hada", "naissance": "1953", "mere": "Elouani", "epoux": "Djourdikh" },
+                      { "nom": "Akli ehamed", "naissance": "1968", "mere": "Slimi", "epoux": "Sadaoui Takleth" }
+                    ]
+                  }
+                ]
+              },
+              {
+                "nom": "Melkhir",
+                "naissance": "1862",
+                "epoux": "Belout",
+                "enfants": [
+                  {
+                    "nom": "Habichi dit Boumad",
+                    "naissance_deces": "1904/1993",
+                    "epoux": "Belkacemi Aouda (1906)",
+                    "enfants": [
+                      {
+                        "nom": "Ahmed",
+                        "naissance_deces": "1931/2010",
+                        "epoux": "Belkacemi Mames (1935/2010)",
+                        "enfants": [
+                          { "nom": "Slimane", "naissance": "1953" },
+                          { "nom": "Hamm", "naissance": "1955" },
+                          { "nom": "Rachid", "naissance": "1976" },
+                          { "nom": "Smail", "naissance": "1979" }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "nom": "Messaoud",
+            "mere": "Moumou halima",
+            "enfants": [
+              {
+                "nom": "Mhamed",
+                "naissance": "1875",
+                "epoux": "Bouzghaya Adidi, fille de Belaha",
+                "enfants": [
+                  { "nom": "Ahcen", "naissance_deces": "1924/1996" },
+                  {
+                    "nom": "Hamouche",
+                    "naissance_deces": "1897/1982",
+                    "epoux": "Chabaine Makaci Tsali",
+                    "enfants": [
+                      { "nom": "Aouda", "naissance_deces": "1924/2001", "epoux": "Amrani Mohamed Bouaiche" },
+                      { "nom": "Ali", "naissance": "1955" },
+                      { "nom": "Ahmed", "naissance": "1948" },
+                      { "nom": "Aabdelkader", "naissance": "1956" }
+                    ]
+                  },
+                  { "nom": "Tabnaroust", "naissance_deces": "1895/1934", "epoux": "Moumou",
+                    "incertain": "ce nœud apparaît deux fois sur le panneau (voir aussi sous Mames 1850 > Aouda) ; il s'agit probablement du même individu relié aux deux branches, mais cela n'a pas pu être confirmé avec certitude" }
+                ]
+              },
+              { "nom": "Aouda", "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Souakh')" }
+            ]
+          },
+          {
+            "nom": "Mames",
+            "naissance": "1850",
+            "mere": "Moumou halima",
+            "notes": "mariée dans la famille Moumou (تزوجت عذ مومو)",
+            "enfants": [
+              {
+                "nom": "Aouda",
+                "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Bjfouh')",
+                "enfants": [
+                  {
+                    "nom": "Tabnaroust",
+                    "naissance_deces": "1895/1934",
+                    "epoux": "Moumou",
+                    "incertain": "voir remarque de doublon possible avec la branche Mhamed 1875 ci-dessus",
+                    "enfants": [
+                      { "nom": "Ahmed", "naissance": "1948" },
+                      { "nom": "Aabdelkader", "naissance": "1956" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "nom": "MHAMED",
+        "naissance_deces": "1835/1906",
+        "mere": "Moumou halima",
+        "notes": "Positionné comme descendant direct de Boutgoumas (au même niveau que la branche Slimane) ; le rattachement précis n'est pas visible en entier sur les photos (flèches partiellement hors-cadre)",
+        "enfants": [
+          {
+            "nom": "Essaid",
+            "deces": "1910",
+            "epoux": "Amhir Fatma",
+            "enfants": [
+              { "nom": "Aicha", "naissance": "1906", "epoux": "Belouti Akli Ali" }
+            ]
+          },
+          { "nom": "Halima", "naissance_deces": "1882/1920", "epoux": "Amhir Hamouch" },
+          {
+            "nom": "Mohamed djidjouh",
+            "naissance_deces": "1884/1925",
+            "epoux": "Gundouz",
+            "enfants": [
+              {
+                "nom": "Essaidh",
+                "naissance_deces": "1910/1941",
+                "epoux": "Anache Aouda",
+                "enfants": [
+                  { "nom": "Amar", "naissance": "1938" }
+                ]
+              },
+              { "nom": "Slimane", "naissance_deces": "1913/2008", "epoux": "Zougari Moumou Messaoudi" },
+              {
+                "nom": "Messaoud",
+                "naissance_deces": "1918/1962",
+                "epoux": "Anache Aouda, Madjkouh Melkhir",
+                "enfants": [
+                  { "nom": "M hamedh", "naissance": "1950", "epoux": "Rachdi Rachida" },
+                  { "nom": "Belkacem", "naissance": "1949", "epoux": "Boucharaine Malika" },
+                  { "nom": "Mohamed", "naissance": "1954", "notes": "dit Tahar", "epoux": "Elatef" },
+                  { "nom": "Chama", "naissance_deces": "1944/2022", "epoux": "Anache Achour" },
+                  { "nom": "Allaoua", "naissance_deces": "1957/2020", "epoux": "Boucharaine" }
+                ]
+              }
+            ]
+          },
+          { "nom": "Fatma", "naissance_deces": "1885/1936", "notes": "Moumou Ahmed Ben Belaha ; fille Moumou Sadha, épouse Zababe" },
+          {
+            "nom": "Ahmed dit Havichi",
+            "naissance_deces": "1893/1937",
+            "epoux": "Gundouz Sada, Moumou Halima",
+            "enfants": [
+              { "nom": "Mames", "naissance_deces": "1926/1958", "notes": "Anabe" },
+              { "nom": "Melkhire dit Heidid", "naissance_deces": "1929/1978", "incertain": "Boutoughmas Sada" },
+              { "nom": "Baya", "naissance_deces": "1935/2001", "notes": "Boutoughmas Slimane" },
+              { "nom": "Said", "naissance_deces": "1930/2002", "epoux": "Boutoughmas Mames, Djourdikh Mahjouba" },
+              { "nom": "Mohamed", "naissance_deces": "1927/2011", "epoux": "Boutoughmas Mames, Djourdikh Mahjouba" },
+              { "nom": "M hamedh", "naissance": "1934", "epoux": "Moumou Aicha (1946), Chabab" }
+            ]
+          },
+          { "nom": "Messaoud / Jaou", "naissance_deces": "1898/1985", "epoux": "Messaoudi Aouda" },
+          { "nom": "Adidi dit Malkhir", "naissance_deces": "1903/1980", "epoux": "Moumou Moumoud" },
+          {
+            "nom": "Hammouche",
+            "naissance_deces": "1900/1975",
+            "epoux": "Messaoudi Messaouda, Bacha, Kharfi Aicha",
+            "enfants": [
+              { "nom": "Ali", "naissance_deces": "1926/2002", "epoux": "Melkhir Moumou Hada, Belkacemi Aouda" },
+              { "nom": "Slimane", "naissance_deces": "1928/2001", "epoux": "Baya (1935/2001)" },
+              { "nom": "Hamouch", "naissance_deces": "1932/2015", "epoux": "Mahjouba" },
+              { "nom": "Habichi", "naissance_deces": "1937/1986", "epoux": "Anache Mames" },
+              { "nom": "Fatma", "incertain": "dates illisibles" },
+              { "nom": "Mohamed", "notes": "dit Boutg", "incertain": "dates illisibles" }
+            ]
+          },
+          {
+            "nom": "Zineb dit Houra",
+            "naissance_deces": "1939/2021",
+            "notes": "Anache Kaci, Anache Said",
+            "incertain": "rattachement exact incertain : positionnée à côté du nœud Hammouche 1900/1975, pourrait être une de ses épouses ou une sœur",
+            "enfants": [
+              { "nom": "Mames", "naissance": "1942", "notes": "Boutoughmas Mahamed, Saidi Slimane" },
+              { "nom": "Saacha", "naissance_deces": "1935/2020", "notes": "Boutoughmas Said" }
+            ]
+          },
+          {
+            "nom": "Slimane dit Hadj Abdarhmane",
+            "naissance_deces": "1905/1970",
+            "epoux": "Belkassam Toukfa, Moumou Messadh",
+            "enfants": [
+              { "nom": "Mohamed dit Iaoudi", "naissance_deces": "1942/2020", "epoux": "Slimani Adidi" },
+              { "nom": "Athmane", "naissance_deces": "1953/2002", "epoux": "Boutoughmas Messaouda" },
+              { "nom": "Aouda", "naissance_deces": "1958/2021", "notes": "Boutoughmas Slimane" },
+              { "nom": "Ramdhane dit Hamid", "naissance": "1961", "incertain": "rattaché à ce groupe, lien exact avec ses frères/sœurs non confirmé" },
+              { "nom": "Thamaiaith", "naissance": "1349", "epoux": "Belout", "incertain": "date probablement mal lue (1349 semble erroné)" },
+              { "nom": "Fadhema", "naissance": "1955", "epoux": "Slimi Belaha" },
+              { "nom": "Melkhire", "naissance": "1957", "epoux": "Redjari Mosloud" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+};
+
+/* ---------- Palette par génération ---------- */
+const PALETTE = [
+  {fill:'var(--c0)', ink:'var(--c0-ink)', label:'Fondateur'},
+  {fill:'var(--c1)', ink:'var(--c1-ink)', label:'Génération 1'},
+  {fill:'var(--c2)', ink:'var(--c2-ink)', label:'Génération 2'},
+  {fill:'var(--c3)', ink:'var(--c3-ink)', label:'Génération 3'},
+  {fill:'var(--c4)', ink:'var(--c4-ink)', label:'Génération 4'},
+  {fill:'var(--c5)', ink:'var(--c5-ink)', label:'Génération 5'},
+  {fill:'var(--c6)', ink:'var(--c6-ink)', label:'Génération 6'},
+  {fill:'var(--c7)', ink:'var(--c7-ink)', label:'Génération 7'}
+];
+
+/* ---------- Layout ---------- */
+const NODE_W = 128, NODE_H = 58, H_GAP = 26, V_GAP = 90;
+let uid = 0;
+let cursorX = 0;
+
+function layout(node, depth){
+  node._id = 'n' + (uid++);
+  node._depth = depth;
+  node._children = node.enfants || [];
+  if(node._children.length === 0){
+    node._x = cursorX + NODE_W/2;
+    cursorX += NODE_W + H_GAP;
+  } else {
+    node._children.forEach(c => layout(c, depth+1));
+    const first = node._children[0], last = node._children[node._children.length-1];
+    node._x = (first._x + last._x) / 2;
+  }
+  node._y = depth * V_GAP + 40;
+}
+
+layout(DATA.racine, 0);
+const totalWidth = cursorX + 40;
+let maxDepth = 0;
+(function findMaxDepth(n){ maxDepth = Math.max(maxDepth, n._depth); (n._children||[]).forEach(findMaxDepth); })(DATA.racine);
+const totalHeight = (maxDepth+1) * V_GAP + 100;
+
+/* ---------- Rendu SVG ---------- */
+const svg = document.getElementById('tree');
+const viewport = document.getElementById('viewport');
+const linksG = document.getElementById('links');
+const nodesG = document.getElementById('nodes');
+svg.setAttribute('width', totalWidth);
+svg.setAttribute('height', totalHeight);
+
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function wrapText(str, maxChars){
+  const words = str.split(' ');
+  const lines = [];
+  let cur = '';
+  for(const w of words){
+    if((cur + ' ' + w).trim().length > maxChars){
+      if(cur) lines.push(cur.trim());
+      cur = w;
+    } else {
+      cur = (cur + ' ' + w).trim();
+    }
+  }
+  if(cur) lines.push(cur.trim());
+  return lines.slice(0,2);
+}
+
+function drawLink(parent, child){
+  const x1 = parent._x, y1 = parent._y + NODE_H/2;
+  const x2 = child._x, y2 = child._y - NODE_H/2;
+  const midY = (y1 + y2) / 2;
+  const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+  const path = el('path', {d, class:'link', 'data-parent':parent._id, 'data-child':child._id});
+  linksG.appendChild(path);
+}
+
+function drawNode(node){
+  const pal = PALETTE[Math.min(node._depth, PALETTE.length-1)];
+  const g = el('g', {
+    class:'node-card',
+    transform:`translate(${node._x - NODE_W/2}, ${node._y - NODE_H/2})`,
+    'data-id': node._id,
+    'data-name': node.nom.toLowerCase()
+  });
+  const rect = el('rect', {
+    width:NODE_W, height:NODE_H, rx:10, ry:10,
+    fill:pal.fill
+  });
+  g.appendChild(rect);
+
+  const nameLines = wrapText(node.nom, 18);
+  const dates = node.naissance_deces || [node.naissance, node.deces].filter(Boolean).join('/') || '';
+
+  let ty = dates ? 20 : (nameLines.length > 1 ? 20 : 33);
+  nameLines.forEach((line, i) => {
+    const t = el('text', {x:NODE_W/2, y: (nameLines.length>1? 18 + i*14 : (dates?20:31)), 'text-anchor':'middle', class:'node-name', fill:pal.ink});
+    t.textContent = line;
+    g.appendChild(t);
+  });
+  if(dates){
+    const dy = nameLines.length > 1 ? 46 : 38;
+    const t2 = el('text', {x:NODE_W/2, y:dy, 'text-anchor':'middle', class:'node-dates', fill:pal.ink});
+    t2.textContent = dates;
+    g.appendChild(t2);
+  }
+  if(node.incertain){
+    const flag = el('text', {x:NODE_W-8, y:14, 'text-anchor':'end', class:'node-flag', fill:pal.ink});
+    flag.textContent = '❓';
+    g.appendChild(flag);
+  }
+
+  g.addEventListener('click', () => openPanel(node));
+  nodesG.appendChild(g);
+}
+
+function renderAll(node){
+  (node._children||[]).forEach(c => { drawLink(node, c); renderAll(c); });
+  drawNode(node);
+}
+renderAll(DATA.racine);
+
+/* ---------- Légende ---------- */
+const legendRows = document.getElementById('legend-rows');
+for(let i=0; i<=maxDepth; i++){
+  const pal = PALETTE[Math.min(i, PALETTE.length-1)];
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<span class="swatch" style="background:${getComputedColor(pal.fill)}"></span><span>${i===0? 'Fondateur' : 'Génération '+i}</span>`;
+  legendRows.appendChild(row);
+}
+function getComputedColor(varName){
+  const tmp = document.createElement('div');
+  tmp.style.color = varName;
+  document.body.appendChild(tmp);
+  const c = getComputedStyle(tmp).color;
+  document.body.removeChild(tmp);
+  return c;
+}
+
+/* ---------- Panneau de détails ---------- */
+const panel = document.getElementById('panel');
+document.getElementById('panelClose').addEventListener('click', () => panel.classList.remove('open'));
+
+function openPanel(node){
+  document.getElementById('pName').textContent = node.nom;
+  const dates = node.naissance_deces || [node.naissance, node.deces].filter(Boolean).join(' / ');
+  document.getElementById('pDates').textContent = dates || '';
+
+  const fields = document.getElementById('pFields');
+  fields.innerHTML = '';
+  function addField(label, value, cls){
+    if(!value) return;
+    const dt = document.createElement('dt'); dt.textContent = label;
+    const dd = document.createElement('dd'); dd.textContent = value; if(cls) dd.className = cls;
+    fields.appendChild(dt); fields.appendChild(dd);
+  }
+  addField('Mère', node.mere);
+  if(node.epouses) addField('Épouses', node.epouses.join(' · '));
+  addField('Époux / épouse', node.epoux);
+  addField('Notes', node.notes);
+  addField('À vérifier', node.incertain, 'incertain');
+
+  const childCount = (node._children||[]).length;
+  document.getElementById('pChildren').textContent =
+    childCount > 0 ? `${childCount} enfant(s) répertorié(s)` : 'Aucun enfant répertorié sur le panneau';
+
+  panel.classList.add('open');
+}
+
+/* ---------- Recherche ---------- */
+const searchInput = document.getElementById('search');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  const cards = nodesG.querySelectorAll('.node-card');
+  if(!q){
+    cards.forEach(c => c.classList.remove('dim','match'));
+    linksG.querySelectorAll('.link').forEach(l => l.classList.remove('dim'));
+    return;
+  }
+  cards.forEach(c => {
+    const match = c.getAttribute('data-name').includes(q);
+    c.classList.toggle('match', match);
+    c.classList.toggle('dim', !match);
+  });
+  linksG.querySelectorAll('.link').forEach(l => l.classList.add('dim'));
+});
+
+/* ---------- Zoom & pan ---------- */
+let scale = 1, tx = 0, ty = 0;
+const wrap = document.getElementById('canvas-wrap');
+
+function applyTransform(){
+  viewport.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`);
+}
+
+function fitToScreen(){
+  const rect = wrap.getBoundingClientRect();
+  const sx = rect.width / totalWidth;
+  const sy = rect.height / totalHeight;
+  scale = Math.min(sx, sy, 1) * 0.94;
+  tx = (rect.width - totalWidth*scale) / 2;
+  ty = 24;
+  applyTransform();
+}
+
+window.addEventListener('resize', fitToScreen);
+fitToScreen();
+
+document.getElementById('zoomIn').addEventListener('click', () => { zoomBy(1.2); });
+document.getElementById('zoomOut').addEventListener('click', () => { zoomBy(1/1.2); });
+document.getElementById('reset').addEventListener('click', fitToScreen);
+
+function zoomBy(factor, cx, cy){
+  const rect = wrap.getBoundingClientRect();
+  cx = cx ?? rect.width/2; cy = cy ?? rect.height/2;
+  const newScale = Math.min(Math.max(scale*factor, 0.08), 4);
+  tx = cx - (cx - tx) * (newScale/scale);
+  ty = cy - (cy - ty) * (newScale/scale);
+  scale = newScale;
+  applyTransform();
+}
+
+wrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = wrap.getBoundingClientRect();
+  const factor = e.deltaY < 0 ? 1.1 : 1/1.1;
+  zoomBy(factor, e.clientX - rect.left, e.clientY - rect.top);
+}, {passive:false});
+
+let dragging = false, lastX, lastY;
+wrap.addEventListener('mousedown', (e) => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  wrap.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+  if(!dragging) return;
+  tx += e.clientX - lastX; ty += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; wrap.classList.remove('dragging'); });
+
+/* touch support */
+let lastTouchDist = null, lastTouchMid = null;
+wrap.addEventListener('touchstart', (e) => {
+  if(e.touches.length === 1){
+    dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+  } else if(e.touches.length === 2){
+    dragging = false;
+    lastTouchDist = touchDist(e.touches);
+    lastTouchMid = touchMid(e.touches);
+  }
+}, {passive:true});
+wrap.addEventListener('touchmove', (e) => {
+  const rect = wrap.getBoundingClientRect();
+  if(e.touches.length === 1 && dragging){
+    tx += e.touches[0].clientX - lastX; ty += e.touches[0].clientY - lastY;
+    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    applyTransform();
+  } else if(e.touches.length === 2){
+    const dist = touchDist(e.touches);
+    const mid = touchMid(e.touches);
+    const factor = dist / lastTouchDist;
+    zoomBy(factor, mid.x - rect.left, mid.y - rect.top);
+    lastTouchDist = dist; lastTouchMid = mid;
+  }
+}, {passive:true});
+wrap.addEventListener('touchend', () => { dragging = false; lastTouchDist = null; });
+function touchDist(t){ return Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY); }
+function touchMid(t){ return {x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2}; }
+</script>
+</body>
+</html>
