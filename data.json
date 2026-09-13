@@ -173,14 +173,14 @@
               { "nom": "Melkhire dit Heidid", "naissance_deces": "1929/1978", "incertain": "Boutoughmas Sada" },
               { "nom": "Baya", "naissance_deces": "1935/2001", "notes": "Boutoughmas Slimane" },
               { "nom": "Said", "naissance_deces": "1930/2002", "epoux": "Boutoughmas Mames, Djourdikh Mahjouba" },
-              { "nom": "Mohamed", "naissance_deces": "1927/2011", "epoux": "Boutoughmas Mames, Djourdikh Mahjouba" },
-              { "nom": "M hamedh", "naissance": "1934", "epoux": "Moumou Aicha (1946), Chabab" }
+              { "nom": "Mohamed", "naissance_deces": "1927/2011", "epoux": "Boutoughmas Mames, Djourdikh Mahjouba" }
             ]
           },
           { "nom": "Messaoud / Jaou", "naissance_deces": "1898/1985", "epoux": "Messaoudi Aouda",
             "enfants": [
               { "nom": "Abd elkader", "naissance_deces": "1932/1983" },
-              { "nom": "Zineb", "naissance": "1940", "notes": "Chabab", "incertain": "second mot après 'Chabab' difficile à lire sur la photo" }
+              { "nom": "Zineb", "naissance": "1940", "notes": "Chabab", "incertain": "second mot après 'Chabab' difficile à lire sur la photo" },
+              { "nom": "M hamedh", "naissance": "1934", "epoux": "Moumou Aicha (1946), Chabab" }
             ]
           },
           { "nom": "Adidi dit Malkhir", "naissance_deces": "1903/1980", "epoux": "Moumou Moumoud" },
