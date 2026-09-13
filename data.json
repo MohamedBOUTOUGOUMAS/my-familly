@@ -90,8 +90,7 @@
                       { "nom": "Aabdelkader", "naissance": "1956" }
                     ]
                   },
-                  { "nom": "Tabnaroust", "naissance_deces": "1895/1934", "epoux": "Moumou",
-                    "incertain": "ce nœud apparaît deux fois sur le panneau (voir aussi sous Mames 1850 > Aouda) ; il s'agit probablement du même individu relié aux deux branches, mais cela n'a pas pu être confirmé avec certitude" }
+                  { "nom": "Tabnaroust", "naissance_deces": "1895/1934", "epoux": "Moumou" }
                 ]
               },
               { "nom": "Aouda", "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Souakh')" }
@@ -101,25 +100,7 @@
             "nom": "Mames",
             "naissance": "1850",
             "mere": "Moumou halima",
-            "notes": "mariée dans la famille Moumou (تزوجت عذ مومو)",
-            "enfants": [
-              {
-                "nom": "Aouda",
-                "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Bjfouh')",
-                "enfants": [
-                  {
-                    "nom": "Tabnaroust",
-                    "naissance_deces": "1895/1934",
-                    "epoux": "Moumou",
-                    "incertain": "voir remarque de doublon possible avec la branche Mhamed 1875 ci-dessus",
-                    "enfants": [
-                      { "nom": "Ahmed", "naissance": "1948" },
-                      { "nom": "Aabdelkader", "naissance": "1956" }
-                    ]
-                  }
-                ]
-              }
-            ]
+            "notes": "mariée dans la famille Moumou (تزوجت عذ مومو)"
           },
           {
             "nom": "MHAMED",

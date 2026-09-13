@@ -190,7 +190,7 @@
 </div>
 
 <script>
-/* ---------- Données (issues du JSON produit précédemment) ---------- */
+/* ---------- Données (embarquées depuis data.json) ---------- */
 const DATA = {
   "famille": "Boutgoumas / Boutoughmas",
   "source": "Panneau généalogique N°95 - État civil 1890 (3 photos)",
@@ -283,8 +283,7 @@ const DATA = {
                       { "nom": "Aabdelkader", "naissance": "1956" }
                     ]
                   },
-                  { "nom": "Tabnaroust", "naissance_deces": "1895/1934", "epoux": "Moumou",
-                    "incertain": "ce nœud apparaît deux fois sur le panneau (voir aussi sous Mames 1850 > Aouda) ; il s'agit probablement du même individu relié aux deux branches, mais cela n'a pas pu être confirmé avec certitude" }
+                  { "nom": "Tabnaroust", "naissance_deces": "1895/1934", "epoux": "Moumou" }
                 ]
               },
               { "nom": "Aouda", "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Souakh')" }
@@ -294,25 +293,7 @@ const DATA = {
             "nom": "Mames",
             "naissance": "1850",
             "mere": "Moumou halima",
-            "notes": "mariée dans la famille Moumou (تزوجت عذ مومو)",
-            "enfants": [
-              {
-                "nom": "Aouda",
-                "incertain": "mariée à la famille (texte arabe difficile à lire, proche de 'Bjfouh')",
-                "enfants": [
-                  {
-                    "nom": "Tabnaroust",
-                    "naissance_deces": "1895/1934",
-                    "epoux": "Moumou",
-                    "incertain": "voir remarque de doublon possible avec la branche Mhamed 1875 ci-dessus",
-                    "enfants": [
-                      { "nom": "Ahmed", "naissance": "1948" },
-                      { "nom": "Aabdelkader", "naissance": "1956" }
-                    ]
-                  }
-                ]
-              }
-            ]
+            "notes": "mariée dans la famille Moumou (تزوجت عذ مومو)"
           },
           {
             "nom": "MHAMED",
@@ -629,8 +610,17 @@ function fitToScreen(){
   applyTransform();
 }
 
+function initialView(){
+  fitToScreen();
+  const rect = wrap.getBoundingClientRect();
+  // Zoom initial plus rapproché, centré sur la racine (Boutgoumas) en haut de l'arbre
+  const rootScreenX = tx + DATA.racine._x * scale;
+  const rootScreenY = ty + DATA.racine._y * scale;
+  zoomBy(2.4, rootScreenX, rootScreenY);
+}
+
 window.addEventListener('resize', fitToScreen);
-fitToScreen();
+initialView();
 
 document.getElementById('zoomIn').addEventListener('click', () => { zoomBy(1.2); });
 document.getElementById('zoomOut').addEventListener('click', () => { zoomBy(1/1.2); });
@@ -694,6 +684,7 @@ wrap.addEventListener('touchmove', (e) => {
 wrap.addEventListener('touchend', () => { dragging = false; lastTouchDist = null; });
 function touchDist(t){ return Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY); }
 function touchMid(t){ return {x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2}; }
+
 </script>
 </body>
 </html>
