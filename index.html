@@ -194,7 +194,7 @@
 const DATA = {
   "famille": "Boutgoumas / Boutoughmas",
   "source": "Panneau généalogique N°95 - État civil 1890 (3 photos)",
-  "avertissement": "Reconstitution établie à partir de photos partiellement floues, coupées par le cadrage, ou avec reflets/ombres portées. Certains textes en arabe et certaines dates sont difficiles à lire avec certitude : ces cas sont signalés par un champ 'incertain'. Certains rattachements de branches ont été déduits de la position des flèches sur le panneau, parfois coupées sur les photos.",
+  "avertissement": "Reconstitution établie à partir de photos partiellement floues, coupées par le cadrage, ou avec reflets/ombres portées. Certains textes en arabe et certaines dates sont difficiles à lire avec certitude : ces cas sont signalés par un champ 'incertain'. Une photo d'ensemble du panneau a permis de confirmer que MHAMED 1835/1906 est bien un enfant de Slimane (et non de Boutgoumas directement).",
   "racine": {
     "nom": "Boutgoumas",
     "enfants": [
@@ -214,6 +214,7 @@ const DATA = {
           {
             "nom": "Habichi",
             "mere": "Boukamoum aouda",
+            "epoux": "Feroum Saada",
             "enfants": [
               { "nom": "Mames", "epoux": "Moumou" },
               {
@@ -312,15 +313,12 @@ const DATA = {
                 ]
               }
             ]
-          }
-        ]
-      },
-      {
-        "nom": "MHAMED",
-        "naissance_deces": "1835/1906",
-        "mere": "Moumou halima",
-        "notes": "Positionné comme descendant direct de Boutgoumas (au même niveau que la branche Slimane) ; le rattachement précis n'est pas visible en entier sur les photos (flèches partiellement hors-cadre)",
-        "enfants": [
+          },
+          {
+            "nom": "MHAMED",
+            "naissance_deces": "1835/1906",
+            "mere": "Moumou halima",
+            "enfants": [
           {
             "nom": "Essaid",
             "deces": "1910",
@@ -410,6 +408,8 @@ const DATA = {
               { "nom": "Fadhema", "naissance": "1955", "epoux": "Slimi Belaha" },
               { "nom": "Melkhire", "naissance": "1957", "epoux": "Redjari Mosloud" }
             ]
+          }
+        ]
           }
         ]
       }
